@@ -1,87 +1,65 @@
-import { useState, useEffect } from 'react';
-import { Document, Page, pdfjs, Outline } from 'react-pdf';
-import 'react-pdf/dist/Page/TextLayer.css';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import './PDFReader.css';
+import toast from 'react-hot-toast';
+import { saveBookPreferences, getBookPreferences } from '../services/storage';
 
-// Set worker source
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// ... existing imports ...
 
-const PDFReader = ({ pdfUrl, onSpeak, onBack }) => {
+const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
+  const defaults = getBookPreferences(bookName);
+  
   const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
+  const [pdfDocument, setPdfDocument] = useState(null);
+  const [pageNumber, setPageNumber] = useState(defaults.pageNumber || 1);
   const [selection, setSelection] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [scale, setScale] = useState(1.2);
+  const [scale, setScale] = useState(defaults.scale || 1.2);
   const [voices, setVoices] = useState([]);
-  const [selectedVoice, setSelectedVoice] = useState('es-ES-AlvaroNeural');
+  const [selectedVoice, setSelectedVoice] = useState(defaults.voice || 'es-ES-AlvaroNeural');
   const [audioUrl, setAudioUrl] = useState(null);
   const [showSidebar, setShowSidebar] = useState(true);
 
+  // Autosave preferences
   useEffect(() => {
-    fetch('http://localhost:5001/api/voices')
-      .then(res => res.json())
-      .then(data => setVoices(data))
-      .catch(err => console.error("Error fetching voices:", err));
-  }, []);
+    saveBookPreferences(bookName, { pageNumber, scale, voice: selectedVoice });
+  }, [pageNumber, scale, selectedVoice, bookName]);
+
+
+  // ... useEffect ...
 
   const [hasOutline, setHasOutline] = useState(false);
 
   function onDocumentLoadSuccess(pdf) {
+    setPdfDocument(pdf);
     setNumPages(pdf.numPages);
     pdf.getOutline().then(outline => {
       setHasOutline(outline && outline.length > 0);
     }).catch(() => setHasOutline(false));
   }
 
+  const handleReadPage = async () => {
+    if (!pdfDocument || isPlaying) return;
 
-  const handleSelection = () => {
-    const selectedText = window.getSelection().toString();
-    if (selectedText && selectedText.trim().length > 0) {
-      const rect = window.getSelection().getRangeAt(0).getBoundingClientRect();
-      setSelection({
-        text: selectedText,
-        x: rect.x + rect.width / 2,
-        y: rect.y
-      });
-      setAudioUrl(null); // Reset audio when new selection
-    } else {
-      // Don't clear selection immediately if we are interacting with tooltip
-      // But for simplicity, we might. 
-      // Let's rely on standard behavior first.
+    try {
+      const page = await pdfDocument.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map(item => item.str).join(' ');
+
+      if (!text.trim()) {
+        toast.error("No se encontró texto en esta página");
+        return;
+      }
+
+      setIsPlaying(true);
+      const url = await onSpeak(text, selectedVoice);
+      setAudioUrl(url);
+      setIsPlaying(false);
+    } catch (error) {
+      console.error("Error reading page:", error);
+      toast.error("Error al leer la página");
+      setIsPlaying(false);
     }
   };
 
-  const speakSelection = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!selection) return;
-    
-    setIsPlaying(true);
-    const url = await onSpeak(selection.text, selectedVoice);
-    setAudioUrl(url);
-    setIsPlaying(false);
-    
-    // Don't clear selection so user can download
-    // window.getSelection().removeAllRanges(); 
-  };
-
-  const handleDownload = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (audioUrl) {
-      window.open(audioUrl, '_blank');
-    }
-  };
-
-  const adjustZoom = (delta) => {
-    setScale(prev => Math.max(0.6, Math.min(3.0, prev + delta)));
-  };
-
-  const handleOutlineClick = ({ pageNumber }) => {
-    setPageNumber(pageNumber);
-  };
-
+  // ... handler functions ... 
 
   return (
     <div className="reader-shell" onMouseUp={handleSelection}>
@@ -132,6 +110,17 @@ const PDFReader = ({ pdfUrl, onSpeak, onBack }) => {
         </div>
 
         <div className="toolbar-group">
+          <button 
+            className="btn-primary-action" 
+            onClick={handleReadPage}
+            disabled={isPlaying}
+            title="Leer página completa"
+          >
+            {isPlaying ? '🔊 ...' : '📖 Leer Página'}
+          </button>
+          
+          <div className="toolbar-divider"></div>
+
           <select 
             className="voice-select" 
             value={selectedVoice} 
@@ -143,6 +132,9 @@ const PDFReader = ({ pdfUrl, onSpeak, onBack }) => {
           </select>
         </div>
       </header>
+
+      {/* ... rest of the component (Main Content Area, Sidebars, etc) ... */}
+
 
       {/* Main Content Area */}
       <div className="content-wrapper">

@@ -1,74 +1,76 @@
-# Lector PDF Inteligente (PDF to MP3 Converter)
+# Intelligent PDF Reader (PDF to MP3 Converter)
 
-Una aplicación web moderna para convertir documentos PDF a audio (MP3) y leerlos de manera interactiva con voces neuronales en español de alta calidad.
+A modern web application to convert PDF documents to audio (MP3) and read them interactively with high-quality neural Spanish voices.
 
-## Características
+## Features
 
-*   **Lectura Interactiva**: Selecciona cualquier texto del PDF para escucharlo al instante.
-*   **Voces Neuronales**: Múltiples voces en español (España, México, Colombia, etc.) impulsadas por Edge TTS.
-*   **Modo Aplicación**: Interfaz de usuario inmersiva con tema oscuro "Pro", barra lateral para el índice y controles fijos.
-*   **Zoom y Navegación**: Control total sobre el tamaño del documento y navegación por páginas.
-*   **Descarga de Audio**: Guarda fragmentos de audio o el documento completo como MP3.
+*   **Interactive Reading**: Select any text in the PDF to listen to it instantly.
+*   **Neural Voices**: Multiple Spanish voices (Spain, Mexico, Colombia, etc.) powered by Edge TTS.
+*   **Pro App Mode**: Immersive user interface with a "Pro" dark theme, sidebar for the table of contents, and fixed controls.
+*   **Personal Library**: Automatically saves your opened books and progress (page, zoom, voice) in your browser. Resume reading instantly!
+*   **Smart Index**: Automatically detects outlines or displays a helpful message if none exist.
+*   **Audio Download**: Save audio snippets or the full document as MP3.
 
-## Requisitos Previos
+## Prerequisites
 
-*   **Node.js** (v18 o superior)
-*   **Python** (v3.8 o superior)
+*   **Node.js** (v18 or higher)
+*   **Python** (v3.8 or higher)
 
-## Instalación y Configuración
+## Installation and Setup
 
-Sigue estos pasos para ejecutar la aplicación en tu entorno local.
+Follow these steps to run the application locally.
 
-### 1. Configuración del Backend (Python)
+### 1. Backend Setup (Python)
 
-El backend maneja la extracción de texto del PDF y la generación de voz.
+The backend handles PDF text extraction and voice generation.
 
 ```bash
 cd backend
 
-# Crear un entorno virtual
+# Create a virtual environment
 python -m venv venv
 
-# Activar el entorno virtual
-# En macOS/Linux:
+# Activate the virtual environment
+# On macOS/Linux:
 source venv/bin/activate
-# En Windows:
+# On Windows:
 # venv\Scripts\activate
 
-# Instalar dependencias
+# Install dependencies
 pip install -r requirements.txt
 
-# Iniciar el servidor (corre en el puerto 5001)
+# Start the server (runs on port 5001)
 python app.py
 ```
 
-### 2. Configuración del Frontend (React)
+### 2. Frontend Setup (React)
 
-El frontend es una aplicación React construida con Vite.
+The frontend is a React application built with Vite.
 
 ```bash
-# Abrir una nueva terminal y navegar a la carpeta frontend
+# Open a new terminal and navigate to the frontend folder
 cd frontend
 
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Iniciar el servidor de desarrollo
+# Start the development server
 npm run dev -- --host
 ```
 
-## Uso
+## Usage
 
-1.  Abre tu navegador en la URL que muestra la terminal del frontend (usualmente `http://localhost:5173`).
-2.  **Sube un PDF**: Arrastra un archivo o haz clic para seleccionarlo.
-3.  **Lee y Escucha**:
-    *   Usa el panel lateral para navegar por el índice.
-    *   Selecciona texto con el mouse y haz clic en el botón flotante **"Leer"**.
-    *   Cambia la voz o el zoom desde la barra superior.
-    *   Descarga el audio generado con el botón de flecha junto al control de reproducción.
+1.  Open your browser at the URL shown in the frontend terminal (usually `http://localhost:5173`).
+2.  **Upload a PDF**: Drag and drop a file or click to select one.
+3.  **Read and Listen**:
+    *   Use the sidebar to navigate the index.
+    *   Select text with your mouse and click the floating **"Read"** button.
+    *   Click **"📖 Read Page"** to listen to the entire current page.
+    *   Change the voice or zoom from the top bar.
+    *   Your progress is saved automatically!
 
-## Tecnologías
+## Technologies
 
-*   **Frontend**: React, Vite, PDF.js, CSS Variables (Dark Theme).
+*   **Frontend**: React, Vite, PDF.js, CSS Variables (Dark Theme), IndexedDB (Persistence).
 *   **Backend**: Flask, PyPDF2/pypdf, Edge TTS (edge-tts).
 *   **Testing**: Playwright.

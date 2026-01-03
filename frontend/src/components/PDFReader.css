@@ -50,7 +50,7 @@
 }
 
 /* Base Button Styles */
-.btn-secondary, .btn-icon, .zoom-controls button, .pagination button {
+.btn-secondary, .btn-icon, .zoom-controls button, .pagination button, .btn-primary-action {
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-primary);
@@ -68,12 +68,32 @@
   font-weight: 500;
 }
 
+.btn-primary-action {
+  background: var(--accent-primary);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--accent-hover);
+}
+
 .btn-secondary:hover, 
 .btn-icon:hover, 
 .zoom-controls button:hover, 
 .pagination button:hover:not(:disabled) {
   background: rgba(255,255,255,0.1);
   color: #fff;
+}
+
+.btn-primary-action:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: 0 0 8px rgba(0, 122, 204, 0.4);
+}
+
+.btn-primary-action:disabled {
+  background: #3e3e42;
+  border-color: #3e3e42;
+  color: #aaa;
+  cursor: wait;
 }
 
 .btn-secondary:active, .btn-icon:active {
