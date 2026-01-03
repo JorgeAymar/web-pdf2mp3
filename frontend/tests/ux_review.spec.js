@@ -5,11 +5,19 @@ test('UX Review', async ({ page }) => {
   await page.goto('http://localhost:5175');
 
   // 1. Check Initial Load and Title
+  await page.screenshot({ path: 'ux_review_screenshots/debug_initial_load.png' });
   await expect(page).toHaveTitle('Lector PDF Inteligente');
+  
+  // Debugging: Log H1 text
+  const h1Text = await page.locator('h1').textContent();
+  console.log('H1 Text found:', h1Text);
+
   await expect(page.locator('h1')).toContainText('Lector de PDF');
 
   // 2. Check Upload Area
   const uploadCard = page.locator('.upload-card');
+  await expect(uploadCard).toBeVisible();
+  await page.screenshot({ path: 'ux_review_screenshots/debug_upload_visible.png' });
   await expect(uploadCard).toBeVisible();
   
   // Check hover state (visual check via screenshot)

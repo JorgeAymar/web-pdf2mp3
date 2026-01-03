@@ -13,6 +13,20 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   
   const audioRef = useRef(new Audio());
+  
+  // Memoize PDF URL to prevent flickering/re-renders
+  const [pdfUrl, setPdfUrl] = useState(null);
+
+  useEffect(() => {
+    if (currentFile) {
+      // If it's a Blob/File object (upload or from DB)
+      const url = URL.createObjectURL(currentFile);
+      setPdfUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPdfUrl(null);
+    }
+  }, [currentFile]);
 
   useEffect(() => {
     loadLibrary();

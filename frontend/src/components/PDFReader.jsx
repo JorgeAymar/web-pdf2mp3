@@ -1,7 +1,13 @@
+import { useState, useEffect } from 'react';
+import { Document, Page, pdfjs, Outline } from 'react-pdf';
 import toast from 'react-hot-toast';
 import { saveBookPreferences, getBookPreferences } from '../services/storage';
+import 'react-pdf/dist/Page/TextLayer.css';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import './PDFReader.css';
 
-// ... existing imports ...
+// Set worker source
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
   const defaults = getBookPreferences(bookName);
@@ -16,20 +22,30 @@ const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
   const [selectedVoice, setSelectedVoice] = useState(defaults.voice || 'es-ES-AlvaroNeural');
   const [audioUrl, setAudioUrl] = useState(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [hasOutline, setHasOutline] = useState(false);
+
+  useEffect(() => {
+    fetch('http://localhost:5001/api/voices')
+      .then(res => res.json())
+      .then(data => setVoices(data))
+      .catch(err => console.error("Error fetching voices:", err));
+  }, []);
 
   // Autosave preferences
   useEffect(() => {
     saveBookPreferences(bookName, { pageNumber, scale, voice: selectedVoice });
   }, [pageNumber, scale, selectedVoice, bookName]);
 
-
-  // ... useEffect ...
-
-  const [hasOutline, setHasOutline] = useState(false);
-
   function onDocumentLoadSuccess(pdf) {
     setPdfDocument(pdf);
     setNumPages(pdf.numPages);
+    
+    // Validate page number from persistence
+    if (pageNumber > pdf.numPages) {
+      setPageNumber(1);
+      toast.error(`La página guardada (${pageNumber}) no existe. Volviendo a página 1.`);
+    }
+
     pdf.getOutline().then(outline => {
       setHasOutline(outline && outline.length > 0);
     }).catch(() => setHasOutline(false));
@@ -59,7 +75,47 @@ const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
     }
   };
 
-  // ... handler functions ... 
+  const handleSelection = () => {
+    const selectedText = window.getSelection().toString();
+    if (selectedText && selectedText.trim().length > 0) {
+      const rect = window.getSelection().getRangeAt(0).getBoundingClientRect();
+      setSelection({
+        text: selectedText,
+        x: rect.x + rect.width / 2,
+        y: rect.y
+      });
+      setAudioUrl(null); // Reset audio when new selection
+    } else {
+      // Allow slight delay or user click to clear
+    }
+  };
+
+  const speakSelection = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selection) return;
+    
+    setIsPlaying(true);
+    const url = await onSpeak(selection.text, selectedVoice);
+    setAudioUrl(url);
+    setIsPlaying(false);
+  };
+
+  const handleDownload = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (audioUrl) {
+      window.open(audioUrl, '_blank');
+    }
+  };
+
+  const adjustZoom = (delta) => {
+    setScale(prev => Math.max(0.6, Math.min(3.0, prev + delta)));
+  };
+
+  const handleOutlineClick = ({ pageNumber }) => {
+    setPageNumber(pageNumber);
+  };
 
   return (
     <div className="reader-shell" onMouseUp={handleSelection}>
@@ -133,9 +189,6 @@ const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
         </div>
       </header>
 
-      {/* ... rest of the component (Main Content Area, Sidebars, etc) ... */}
-
-
       {/* Main Content Area */}
       <div className="content-wrapper">
         
@@ -162,14 +215,23 @@ const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
           <Document
             file={pdfUrl}
             onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={(error) => {
+              console.error("Error loading PDF:", error);
+              toast.error("Error al cargar el PDF: " + error.message);
+            }}
+            loading={<div style={{padding: '2rem', color: '#888'}}>Cargando documento...</div>}
+            error={<div style={{padding: '2rem', color: '#ff6b6b'}}>Error al cargar el PDF. Intente de nuevo.</div>}
             className="pdf-document"
           >
-            <Page 
-              pageNumber={pageNumber} 
-              renderTextLayer={true} 
-              renderAnnotationLayer={false}
-              scale={scale}
-            />
+            {numPages && (
+              <Page 
+                pageNumber={Math.min(pageNumber, numPages)} 
+                renderTextLayer={true} 
+                renderAnnotationLayer={false}
+                scale={scale}
+                onRenderError={(error) => console.error("Error rendering page:", error)}
+              />
+            )}
           </Document>
         </div>
       </div>
@@ -206,7 +268,5 @@ const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
     </div>
   );
 };
-
-
 
 export default PDFReader;
