@@ -9,7 +9,7 @@ import './PDFReader.css';
 // Set worker source
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
+const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack, onConvert }) => {
   const defaults = getBookPreferences(bookName);
   
   const [numPages, setNumPages] = useState(null);
@@ -175,6 +175,15 @@ const PDFReader = ({ pdfUrl, bookName, onSpeak, onBack }) => {
             {isPlaying ? '🔊 ...' : '📖 Leer Página'}
           </button>
           
+           <button 
+            className="btn-primary-action" 
+            onClick={onConvert}
+            title="Descargar libro entero"
+            style={{ marginLeft: '0.5rem', background: 'rgba(100, 255, 100, 0.1)', color: '#8f8' }}
+          >
+            💿 MP3
+          </button>
+
           <div className="toolbar-divider"></div>
 
           <select 

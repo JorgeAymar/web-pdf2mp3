@@ -108,6 +108,35 @@ function App() {
     }
   };
 
+  const handleConvertBook = async () => {
+    if (!currentFile) return;
+
+    const toastId = toast.loading('Convirtiendo libro completo. Esto puede tardar...');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', currentFile);
+      
+      const response = await fetch('http://localhost:5001/api/convert', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Conversion failed');
+
+      const data = await response.json();
+      const downloadUrl = `http://localhost:5001${data.download_url}`;
+      
+      // Trigger download
+      window.open(downloadUrl, '_blank');
+      
+      toast.success('¡Conversión completada!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Error en la conversión: ' + err.message, { id: toastId });
+    }
+  };
+
   const handleBack = () => {
     setViewMode('upload');
     setCurrentFile(null);
@@ -175,6 +204,7 @@ function App() {
           pdfUrl={pdfUrl} 
           bookName={currentBookMeta?.name || 'unknown'}
           onSpeak={handleSpeakText} 
+          onConvert={handleConvertBook}
           onBack={handleBack}
         />
       )}
